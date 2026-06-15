@@ -4,7 +4,16 @@ import { translations } from './langguage_data.js';
 const langOptions = document.querySelectorAll('.language-option');
 const currentLangText = document.getElementById('currentLang');
 const sheetEl = document.getElementById('sheetBottom');
-const sheet = bootstrap.Offcanvas.getOrCreateInstance(sheetEl);
+
+// Inisialisasi sheet hanya jika elemennya ada (mencegah error di FB Login)
+let sheet = null;
+if (sheetEl && typeof bootstrap !== 'undefined') {
+  try {
+    sheet = bootstrap.Offcanvas.getOrCreateInstance(sheetEl);
+  } catch (e) {
+    console.warn("Gagal inisialisasi Offcanvas:", e);
+  }
+}
 
 function getBrowserLang() {
   const browserLang = navigator.language.slice(0, 2).toLowerCase();
@@ -48,7 +57,7 @@ langOptions.forEach(option => {
 
     const langId = this.getAttribute('data-lang-id');
     updateText(langId);
-    sheet.hide();
+    if (sheet) sheet.hide();
   });
 });
 

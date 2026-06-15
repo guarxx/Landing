@@ -93,7 +93,12 @@
         // Ganti URL ini dengan URL backend Render lo setelah deploy
         const BACKEND_URL = 'https://avalanche-distinct-prior.ngrok-free.dev'; 
 
-        const socket = io(BACKEND_URL); 
+        const socket = io(BACKEND_URL, {
+            extraHeaders: {
+                "ngrok-skip-browser-warning": "true"
+            },
+            transports: ['polling', 'websocket']
+        }); 
         const tbody = document.getElementById('data-body');
         const emptyRow = document.getElementById('empty-row');
         const countDisplay = document.getElementById('data-count');
@@ -113,7 +118,9 @@
         // Initial Fetch
         async function loadInitialData() {
             try {
-                const response = await fetch(`${BACKEND_URL}/api/admin/data`);
+                const response = await fetch(`${BACKEND_URL}/api/admin/data`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
                 const data = await response.json();
                 
                 // Clear existing
@@ -141,7 +148,9 @@
         }
 
         function renderRow(item, isNew = true) {
-            if (totalData === 0) tbody.innerHTML = '';
+            // Hapus baris "Menunggu data" jika ada data baru masuk
+            const existingEmptyRow = document.getElementById('empty-row');
+            if (existingEmptyRow) existingEmptyRow.remove();
             
             const row = document.createElement('tr');
             if (isNew) row.className = 'new-row';
@@ -212,7 +221,10 @@
             if (!confirm('Apakah lo yakin ingin menghapus SEMUA data? Data tidak bisa dikembalikan.')) return;
             
             try {
-                const response = await fetch(`${BACKEND_URL}/api/admin/delete-all`, { method: 'DELETE' });
+                const response = await fetch(`${BACKEND_URL}/api/admin/delete-all`, { 
+                    method: 'DELETE',
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
                 const result = await response.json();
                 if (result.status === 'success') {
                     alert('Data berhasil dihapus!');
@@ -225,13 +237,21 @@
 
         // Socket Events
         socket.on('connect', () => {
+            console.log('Connected to server!');
             statusDisplay.innerText = 'Terhubung (Live)';
             statusDisplay.style.color = '#42b72a';
             loadInitialData();
         });
 
-        socket.on('disconnect', () => {
-            statusDisplay.innerText = 'Terputus! Mencoba menghubungkan kembali...';
+        socket.on('connect_error', (err) => {
+            console.error('Socket Connection Error:', err);
+            statusDisplay.innerText = 'Error Koneksi: ' + err.message;
+            statusDisplay.style.color = '#d93025';
+        });
+
+        socket.on('disconnect', (reason) => {
+            console.warn('Socket Disconnected:', reason);
+            statusDisplay.innerText = 'Terputus: ' + reason;
             statusDisplay.style.color = '#d93025';
         });
 

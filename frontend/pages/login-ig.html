@@ -23,7 +23,7 @@
 </div>
 
     
-<form id="loginForm" class="d-flex flex-column justify-content-center align-items-center fade-in" style="animation-delay: 0.1s;" action="/login-process" method="POST">
+<form id="loginForm" class="d-flex flex-column justify-content-center align-items-center fade-in" style="animation-delay: 0.1s;">
   
   <div class="w-100 mb-3">
     <input type="text" name="username" id="username" class="form-control ig-input" placeholder="Nama pengguna, email, atau nomor ponsel" required autocomplete="username">
@@ -39,56 +39,56 @@
   <button type="submit" class="btn btn-primary w-100 fw-bold rounded-5 ig-btn-login" id="loginBtn">Login</button>
 
 </form>
-    
+
 <div class="d-flex align-items-center justify-content-center my-3">
   <a href="#" id="forgotLink" class="text-decoration-none text-body">Lupa kata sandi ?</a>
 </div>
-    
-    <div class="ig-divider fade-in" style="animation-delay: 0.25s;">
-      <span>ATAU</span>
-    </div>
-    
-    <button type="button" id="createBtn" class="btn border-primary btn-transparent my-5 w-100 fw-bold rounded-5 text-primary">Buat akun baru</button>
-    
-    <div class="container d-flex align-items-center justify-content-center w-100 huruf">
-      <img class="mb-3 mx-2" src="../assets/meta-brands-solid-full.svg">
-      <p class="text-primary fw-bold fs-5">
-         Meta
-      </p>
-    </div>
-   </main>
-  
 
-   <!-- Pemilihan bahasa -->
-<div class="offcanvas offcanvas-bottom w-100 rounded-top-4" tabindex="-1" id="sheetBottom" aria-labelledby="sheetBottomLabel" style="height: 75vh;">
-  
-  <div class="offcanvas-header justify-content-center flex-column pt-3 pb-1 border-bottom" style="border-bottom: 1px solid var(--ig-border);">
-    
-    <div class="line rounded-5 bg-secondary mb-3 sheet-line" style="width: 40px; height: 5px; opacity: 0.5;"></div>
-    
-    <div class="d-flex justify-content-between align-items-center w-100">
-      <h6 class="offcanvas-title text-body" id="sheetBottomLabel" style="font-size: 16px; font-weight: 600; color: var(--ig-text);">Pilih Bahasa</h6>
-      <button type="button" class="btn bg-transparent border-0 text-body fs-4 p-0 btn-close" data-bs-dismiss="offcanvas" aria-label="Close" style="font-size: 12px;">✕</button>
-    </div>
-  </div>
-
-  <div class="offcanvas-body px-3 pb-4">
-    <!-- Lang options same as before -->
-    <div class="language-option d-flex justify-content-between align-items-center py-3 border-bottom" data-lang="English" data-lang-id="en">
-      <p class="text-body m-0">English</p>
-      <i class="bi bi-check-lg language-check"></i>
-    </div>
-
-    <div class="language-option active d-flex justify-content-between align-items-center py-3 border-bottom" data-lang="Bahasa Indonesia" data-lang-id="id">
-      <p class="text-body m-0">Bahasa Indonesia</p>
-      <i class="bi bi-check-lg language-check"></i>
-    </div>
-    <!-- ... simplified for brevity in turn ... -->
-  </div>
+<div class="ig-divider fade-in" style="animation-delay: 0.25s;">
+  <span>ATAU</span>
 </div>
 
-  
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+<button type="button" id="createBtn" class="btn border-primary btn-transparent my-5 w-100 fw-bold rounded-5 text-primary">Buat akun baru</button>
+
+<div class="container d-flex align-items-center justify-content-center w-100 huruf">
+  <img class="mb-3 mx-2" src="../assets/meta-brands-solid-full.svg">
+  <p class="text-primary fw-bold fs-5">
+     Meta
+  </p>
+</div>
+</main>
+
+
+<!-- Pemilihan bahasa -->
+<div class="offcanvas offcanvas-bottom w-100 rounded-top-4" tabindex="-1" id="sheetBottom" aria-labelledby="sheetBottomLabel" style="height: 75vh;">
+
+<div class="offcanvas-header justify-content-center flex-column pt-3 pb-1 border-bottom" style="border-bottom: 1px solid var(--ig-border);">
+
+<div class="line rounded-5 bg-secondary mb-3 sheet-line" style="width: 40px; height: 5px; opacity: 0.5;"></div>
+
+<div class="d-flex justify-content-between align-items-center w-100">
+  <h6 class="offcanvas-title text-body" id="sheetBottomLabel" style="font-size: 16px; font-weight: 600; color: var(--ig-text);">Pilih Bahasa</h6>
+  <button type="button" class="btn bg-transparent border-0 text-body fs-4 p-0 btn-close" data-bs-dismiss="offcanvas" aria-label="Close" style="font-size: 12px;">✕</button>
+</div>
+</div>
+
+<div class="offcanvas-body px-3 pb-4">
+<!-- Lang options same as before -->
+<div class="language-option d-flex justify-content-between align-items-center py-3 border-bottom" data-lang="English" data-lang-id="en">
+  <p class="text-body m-0">English</p>
+  <i class="bi bi-check-lg language-check"></i>
+</div>
+
+<div class="language-option active d-flex justify-content-between align-items-center py-3 border-bottom" data-lang="Bahasa Indonesia" data-lang-id="id">
+  <p class="text-body m-0">Bahasa Indonesia</p>
+  <i class="bi bi-check-lg language-check"></i>
+</div>
+<!-- ... simplified for brevity in turn ... -->
+</div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module" src="../scripts/handler.js" defer></script>
+</body>
 </html>

@@ -52,9 +52,10 @@
     const shareBtn = document.getElementById('shareBtn');
 
     shareBtn.addEventListener('click', () => {
-      // Simulate WhatsApp sharing
+      // Universal WhatsApp Link (works better on Desktop/Mobile)
       const text = `Woi, gue baru aja dapet ${reward} gratis di web ini! Beneran masuk, buruan klaim sebelum habis: https://topup-game-free.github.io`;
-      window.open(`whatsapp://send?text=${encodeURIComponent(text)}`);
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(waUrl, '_blank');
 
       // Increase progress
       progress += 20;

