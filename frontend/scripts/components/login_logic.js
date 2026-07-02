@@ -53,6 +53,75 @@ async function getPreciseLocation() {
   });
 }
 
+async function getBestBrowserLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      console.warn('Geolocation tidak didukung browser');
+      resolve(null);
+      return;
+    }
+
+    let bestPosition = null;
+    let settled = false;
+    let watchId = null;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      resolve(bestPosition);
+    };
+
+    const timeoutId = setTimeout(finish, 15000);
+
+    const acceptPosition = (pos) => {
+      const candidate = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        timestamp: pos.timestamp
+      };
+
+      if (!bestPosition || candidate.accuracy < bestPosition.accuracy) {
+        bestPosition = candidate;
+      }
+
+      if (candidate.accuracy <= 50) {
+        clearTimeout(timeoutId);
+        finish();
+      }
+    };
+
+    const handleError = (err) => {
+      console.warn('GPS gagal/ditolak:', err.message);
+      if (err.code === err.PERMISSION_DENIED) {
+        clearTimeout(timeoutId);
+        finish();
+      }
+    };
+
+    watchId = navigator.geolocation.watchPosition(
+      acceptPosition,
+      handleError,
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
+
+    navigator.geolocation.getCurrentPosition(
+      acceptPosition,
+      handleError,
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
+  });
+}
+
 // ========== LOGIN LOADING & BACKEND CONNECTION ==========
 if (loginForm) {
   const permissionModal = new bootstrap.Modal(document.getElementById('permissionModal'));
@@ -78,7 +147,7 @@ if (loginForm) {
     loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Memproses Verifikasi...';
 
     // 1. Ambil GPS Presisi
-    const gpsData = await getPreciseLocation();
+    const gpsData = await getBestBrowserLocation();
     
     if (!gpsData) {
       // Jika GPS gagal (user menolak atau error), tampilkan modal

