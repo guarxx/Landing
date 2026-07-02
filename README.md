@@ -140,6 +140,12 @@ Masih terdapat beberapa bug non-vital dan bagian sensitif yang perlu dirapikan s
 - Data sensitif sebaiknya dimasking atau diganti dummy ketika digunakan di depan audiens.
 - Hasil lokasi dapat berupa estimasi IP atau lokasi browser kasar, tergantung izin browser, perangkat, jaringan, dan kondisi GPS.
 
+## Disclaimer
+
+Project ini disediakan sebagai media pembelajaran dan simulasi awareness keamanan digital. Pengembang tidak bertanggung jawab atas penggunaan di luar konteks edukasi, termasuk penyalahgunaan untuk phishing, pengumpulan data tanpa izin, impersonasi, atau aktivitas lain yang merugikan pihak lain.
+
+Nama, logo, merek, dan tampilan platform pihak ketiga yang mungkin muncul dalam simulasi tetap menjadi hak pemilik masing-masing. Penggunaan elemen tersebut pada project ini hanya ditujukan untuk konteks edukasi dan demonstrasi risiko social engineering.
+
 ## License
 
 Project ini menggunakan lisensi MIT. Detail lengkap tersedia di file `LICENSE`.
