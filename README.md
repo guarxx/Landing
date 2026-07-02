@@ -14,12 +14,12 @@ Pada sesi demo, disarankan menggunakan akun dummy, data dummy, dan lingkungan ya
 
 Screenshot final dapat diletakkan pada folder `docs/screenshots/` setelah tampilan demo selesai dirapikan.
 
-| Tampilan | File Placeholder | Keterangan |
-| --- | --- | --- |
-| Landing top-up | `docs/screenshots/landing.png` | Halaman awal pemilihan game dan hadiah |
-| Pilihan login | `docs/screenshots/login-selection.png` | Halaman pemilihan metode login simulasi |
-| Dashboard admin | `docs/screenshots/admin-dashboard.png` | Panel monitoring data demo secara real-time |
-| Alert edukasi | `docs/screenshots/alert-education.png` | Halaman penjelasan setelah simulasi selesai |
+| Tampilan | Preview | Keterangan |
+|---|---|---|
+| Landing top-up | <img src="docs/screenshots/landing.png" width="220"> | Halaman awal pemilihan game dan hadiah |
+| Pilihan login | <img src="docs/screenshots/login-selection.png" width="220"> | Halaman pemilihan metode login simulasi |
+| Dashboard admin | <img src="docs/screenshots/admin-dashboard.png" width="220"> | Panel monitoring data demo secara real-time |
+| Alert edukasi | <img src="docs/screenshots/alert-education.png" width="220"> | Halaman penjelasan setelah simulasi selesai |
 
 ## Fitur Utama
 
