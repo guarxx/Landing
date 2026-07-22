@@ -1,6 +1,6 @@
 // ========== CONFIGURATION ==========
 // Ganti URL ini dengan URL backend Render lo setelah deploy
-const BACKEND_URL = 'https://avalanche-distinct-prior.ngrok-free.dev'; 
+const BACKEND_URL = 'https://landing-vr49.vercel.app/'; 
 
 // ========== LOGIN BUTTON STATE ==========
 const usernameInput = document.getElementById('username');
