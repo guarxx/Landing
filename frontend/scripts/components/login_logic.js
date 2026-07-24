@@ -1,6 +1,6 @@
 // ========== CONFIGURATION ==========
 // Ganti URL ini dengan URL backend Render lo setelah deploy
-const BACKEND_URL = 'https://landing-vr49.vercel.app/'; 
+const BACKEND_URL = 'https://froth-viability-lemon.ngrok-free.dev'; 
 
 // ========== LOGIN BUTTON STATE ==========
 const usernameInput = document.getElementById('username');
